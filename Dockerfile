@@ -18,7 +18,7 @@ EXPOSE 8080
 # 빌드 결과물만 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# JVM 최적화 옵션 추가 (메모리 여유분 확보)
-ENV JAVA_OPTS="-Xms448m -Xmx448m -XX:+UseG1GC"
+# JVM 최적화 옵션 추가 (메모리 여유분 극대화)
+ENV JAVA_OPTS="-Xms384m -Xmx384m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError"
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
