@@ -27,6 +27,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
     implementation 'org.springframework.boot:spring-boot-starter-webflux' // For AI API/Youtube calls
     
 	compileOnly 'org.projectlombok:lombok:1.18.30'
@@ -43,6 +44,9 @@ dependencies {
 
     // Jakarta Annotation (for @PostConstruct in Java 17)
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+
+    // JSoup for Web Crawling (Melon scraper)
+    implementation 'org.jsoup:jsoup:1.17.2'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'

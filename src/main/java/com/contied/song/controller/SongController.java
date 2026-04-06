@@ -14,6 +14,14 @@ public class SongController {
 
     private final SongService songService;
 
+    @GetMapping
+    public List<SongResponse> getAllSongs(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int cursor,
+            @RequestParam(defaultValue = "500") int take) {
+        return songService.searchSongs(keyword);
+    }
+
     @GetMapping("/search")
     public List<SongResponse> searchSongs(
             @RequestParam(name = "q", required = false) String keyword,

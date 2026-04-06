@@ -10,18 +10,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class AiResponse {
-    private AiData data;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class AiData {
-        private String title;
-        private String description;
-        private List<AiSong> songs;
-    }
+    private String title;
+    private String description;
+    private List<AiSong> songs;
 
     @Getter
     @Setter

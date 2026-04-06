@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -29,27 +30,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String jwt = getJwtFromRequest(request);
 
-        if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-            Claims claims = tokenProvider.getClaims(jwt);
-            String email = claims.get("email", String.class);
-            String nickname = claims.get("user_metadata", java.util.Map.class) != null 
-                    ? (String) ((java.util.Map) claims.get("user_metadata")).get("full_name") 
-                    : "Unknown User";
+        try {
+            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                Claims claims = tokenProvider.getClaims(jwt);
+                String email = claims.get("email", String.class);
+                
+                // metadata가 null일 수 있으므로 안전하게 처리
+                Map<String, Object> metadata = (Map<String, Object>) claims.get("user_metadata");
+                String nickname = (metadata != null && metadata.get("full_name") != null) 
+                        ? (String) metadata.get("full_name") 
+                        : "Unknown User";
 
-            // 유저 동기화: DB에 없으면 생성
-            userRepository.findByEmail(email).orElseGet(() -> 
-                userRepository.save(com.contied.user.entity.UserEntity.builder()
-                        .email(email)
-                        .nickname(nickname)
-                        .role(com.contied.user.entity.Role.UNKNOWN)
-                        .build())
-            );
+                System.out.println("Processing JWT for email: " + email);
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    email, null, Collections.emptyList());
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // 이메일이 없으면 인증 실패 처리 (또는 다음 필터로)
+                if (!StringUtils.hasText(email)) {
+                    System.err.println("JWT error: Email is missing in token claims");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                // 유저 동기화: DB에 없으면 생성
+                final String finalEmail = email;
+                userRepository.findByEmail(finalEmail).orElseGet(() -> {
+                    System.out.println("Creating new user for: " + finalEmail);
+                    return userRepository.saveAndFlush(com.contied.user.entity.UserEntity.builder()
+                            .email(finalEmail)
+                            .nickname(nickname)
+                            .role(com.contied.user.entity.Role.UNKNOWN)
+                            .build());
+                });
+
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        email, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        } catch (Exception e) {
+            System.err.println("JWT Authentication error: " + e.getMessage());
+            e.printStackTrace();
         }
 
         filterChain.doFilter(request, response);

@@ -2,10 +2,10 @@ package com.contied.conti.controller;
 
 import com.contied.conti.dto.ContiResponse;
 import com.contied.conti.dto.PostContiByAiRequest;
+import com.contied.conti.dto.PostContiByCreationRequest;
+import com.contied.conti.dto.PostContiByYoutubeRequest;
 import com.contied.conti.service.ContiService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,8 +19,8 @@ public class ContiController {
     private final ContiService contiService;
 
     @GetMapping
-    public Page<ContiResponse> getAllContis(Pageable pageable) {
-        return contiService.getAllContis(pageable);
+    public List<ContiResponse> getAllContis() {
+        return contiService.getAllContis();
     }
 
     @GetMapping("/{id}")
@@ -28,17 +28,49 @@ public class ContiController {
         return contiService.getContiById(id);
     }
 
-    @GetMapping("/my")
-    public List<ContiResponse> getMyContis(@AuthenticationPrincipal String email) {
-        return contiService.getMyContis(email);
+    @GetMapping("/myconti")
+    public com.contied.conti.dto.MyContiesResponse getMyContis(
+            @AuthenticationPrincipal String email,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") Long cursor,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "100") int take) {
+        return contiService.getMyContis(email, cursor, take);
     }
 
-    @PostMapping("/ai")
-    public ContiResponse createContiByAi(@AuthenticationPrincipal String email, @RequestBody PostContiByAiRequest request) {
+    @PostMapping("/myconti/custom")
+    public ContiResponse createContiByCreation(
+            @AuthenticationPrincipal String email, 
+            @RequestBody PostContiByCreationRequest request) {
+        return contiService.createConti(email, request);
+    }
+
+    @PostMapping("/myconti/ai")
+    public ContiResponse createContiByAi(
+            @AuthenticationPrincipal String email, 
+            @RequestBody PostContiByAiRequest request) {
         return contiService.createContiByAi(email, request);
     }
 
-    @DeleteMapping("/{id}")
+    @PostMapping("/myconti/youtube")
+    public ContiResponse createContiByYoutube(
+            @AuthenticationPrincipal String email, 
+            @RequestBody PostContiByYoutubeRequest request) {
+        return contiService.createContiByYoutube(email, request);
+    }
+
+    @GetMapping("/myconti/{id}")
+    public ContiResponse getMyContiById(@AuthenticationPrincipal String email, @PathVariable Long id) {
+        return contiService.getMyContiById(email, id);
+    }
+
+    @PatchMapping("/myconti/{id}")
+    public ContiResponse updateContiById(
+            @AuthenticationPrincipal String email, 
+            @RequestBody com.contied.conti.dto.PatchContiDto request, 
+            @PathVariable Long id) {
+        return contiService.updateContiById(email, request, id);
+    }
+
+    @DeleteMapping("/myconti/{id}")
     public void deleteConti(@AuthenticationPrincipal String email, @PathVariable Long id) {
         contiService.deleteConti(email, id);
     }
