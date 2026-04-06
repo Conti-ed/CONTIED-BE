@@ -158,7 +158,7 @@ public class YoutubeService {
         }
 
         try {
-            Map response = webClient.get()
+            Map<?, ?> response = webClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .scheme("https").host("www.googleapis.com").path("/youtube/v3/playlists")
                             .queryParam("part", "snippet")
@@ -168,11 +168,15 @@ public class YoutubeService {
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
-                    
-            List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
-            if (items != null && !items.isEmpty()) {
-                Map snippet = (Map) items.get(0).get("snippet");
-                return (String) snippet.get("title");
+            
+            if (response != null && response.get("items") instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
+                if (items != null && !items.isEmpty()) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> snippet = (Map<String, Object>) items.get(0).get("snippet");
+                    return (String) snippet.get("title");
+                }
             }
         } catch (Exception e) {
             System.err.println("Failed to fetch playlist title: " + e.getMessage());
@@ -185,7 +189,7 @@ public class YoutubeService {
             youtubeApiKey = System.getenv("YOUTUBE_API_KEY");
         }
 
-        Map response = webClient.get()
+        Map<?, ?> response = webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .scheme("https").host("www.googleapis.com").path("/youtube/v3/playlistItems")
                         .queryParam("part", "snippet")
@@ -197,27 +201,35 @@ public class YoutubeService {
                 .bodyToMono(Map.class)
                 .block();
 
-        List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
         List<Map<String, Object>> resultList = new ArrayList<>();
 
-        if (items != null) {
-            for (Map<String, Object> item : items) {
-                Map snippet = (Map) item.get("snippet");
-                Map resourceId = (Map) snippet.get("resourceId");
-                Map thumbnails = (Map) snippet.get("thumbnails");
-                Map highThumb = thumbnails != null ? (Map) thumbnails.get("high") : null;
-                String channelTitle = (String) snippet.get("videoOwnerChannelTitle");
-                if (channelTitle != null) {
-                    // 유튜브 뮤직에서 자동으로 생성된 채널명 끝의 " - Topic" 글자 잘라내기
-                    channelTitle = channelTitle.replaceAll("(?i)\\s*-\\s*Topic$", "").trim();
-                }
+        if (response != null && response.get("items") instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
+            if (items != null) {
+                for (Map<String, Object> item : items) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> snippet = (Map<String, Object>) item.get("snippet");
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> resourceId = (Map<String, Object>) snippet.get("resourceId");
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> thumbnails = (Map<String, Object>) snippet.get("thumbnails");
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> highThumb = thumbnails != null ? (Map<String, Object>) thumbnails.get("high") : null;
+                    
+                    String channelTitle = (String) snippet.get("videoOwnerChannelTitle");
+                    if (channelTitle != null) {
+                        // 유튜브 뮤직에서 자동으로 생성된 채널명 끝의 " - Topic" 글자 잘라내기
+                        channelTitle = channelTitle.replaceAll("(?i)\\s*-\\s*Topic$", "").trim();
+                    }
 
-                resultList.add(Map.of(
-                        "title", snippet.get("title"),
-                        "videoId", resourceId.get("videoId"),
-                        "thumbnail", highThumb != null ? highThumb.get("url") : "",
-                        "channelTitle", channelTitle != null ? channelTitle : ""
-                ));
+                    resultList.add(Map.of(
+                            "title", snippet.get("title"),
+                            "videoId", resourceId.get("videoId"),
+                            "thumbnail", highThumb != null ? highThumb.get("url") : "",
+                            "channelTitle", channelTitle != null ? channelTitle : ""
+                    ));
+                }
             }
         }
         return resultList;
