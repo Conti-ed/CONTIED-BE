@@ -5,13 +5,13 @@ WORKDIR /home/gradle/src
 # Build without running tests to save time and resources
 RUN gradle build --no-daemon -x test
 
-# Run stage
-FROM openjdk:17-slim
+# 2단계: 실행용 컨테이너
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 EXPOSE 8080
 
-# Copy only the executable jar from the build stage
-COPY --from=build /home/gradle/src/build/libs/*-SNAPSHOT.jar app.jar
+# Build 단계에서 생성된 jar 파일을 실행 디렉토리로 복사
+COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 
 # Set standard environment variables
 ENV JAVA_OPTS="-Xms512m -Xmx512m"
