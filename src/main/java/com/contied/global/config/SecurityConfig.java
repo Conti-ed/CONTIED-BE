@@ -59,7 +59,9 @@ public class SecurityConfig {
                 "http://127.0.0.1:*",
                 "http://[::1]:*",
                 "https://contied.vercel.app",
-                "https://*.vercel.app"
+                "https://*.vercel.app",
+                "https://contied.cloud",
+                "https://*.contied.cloud"
         ));
  // 실운영 시 특정 도메인으로 제한 필요
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
