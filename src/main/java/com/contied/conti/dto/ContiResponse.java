@@ -54,12 +54,17 @@ public class ContiResponse {
     }
 
     public static ContiResponse from(ContiEntity entity) {
+        // duration을 songs의 duration 합산으로 동적 계산
+        int calculatedDuration = entity.getSongs().stream()
+                .mapToInt(song -> song.getDuration() != null ? song.getDuration() : 0)
+                .sum();
+
         return ContiResponse.builder()
                 .id(entity.getId())
                 .state(entity.getState())
                 .title(entity.getTitle())
                 .thumbnail(entity.getThumbnail())
-                .duration(entity.getDuration())
+                .duration(calculatedDuration)
                 .description(entity.getDescription())
                 .youtubeUrl(entity.getYoutubeUrl())
                 .creatorNickname(entity.getUser() != null ? entity.getUser().getNickname() : "Unknown")

@@ -181,6 +181,7 @@ public class ContiService {
                         .lyrics(dto.lyrics)
                         .videoId(dto.videoId)
                         .thumbnail(dto.thumbnail)
+                        .duration(dto.duration)
                         .state(com.contied.song.entity.State.ACTIVE)
                         .build();
                 songs.add(songRepository.save(newSong));

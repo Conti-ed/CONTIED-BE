@@ -38,6 +38,7 @@ public class YoutubeService {
         public String thumbnail;
         public String artist;
         public String lyrics;
+        public int duration; // 초 단위
     }
 
     public List<SongDetailDto> getSongsByPlaylist(String url) {
@@ -47,6 +48,14 @@ public class YoutubeService {
         }
 
         List<Map<String, Object>> playlistItems = getPlaylistItems(playlistId, 50);
+        
+        // videoId 목록 수집하여 Videos API로 duration 일괄 조회
+        List<String> videoIds = new ArrayList<>();
+        for (Map<String, Object> item : playlistItems) {
+            videoIds.add((String) item.get("videoId"));
+        }
+        Map<String, Integer> durationMap = getVideoDurations(videoIds);
+        
         List<SongDetailDto> songDetails = new ArrayList<>();
 
         for (Map<String, Object> item : playlistItems) {
@@ -60,10 +69,80 @@ public class YoutubeService {
             dto.thumbnail = (String) item.get("thumbnail");
             dto.artist = artistAndLyrics[0];
             dto.lyrics = artistAndLyrics[1];
+            dto.duration = durationMap.getOrDefault(dto.videoId, 0);
 
             songDetails.add(dto);
         }
         return songDetails;
+    }
+
+    /**
+     * YouTube Data API Videos 리소스로 duration 일괄 조회
+     */
+    private Map<String, Integer> getVideoDurations(List<String> videoIds) {
+        Map<String, Integer> durationMap = new java.util.HashMap<>();
+        if (videoIds == null || videoIds.isEmpty()) return durationMap;
+
+        if (youtubeApiKey == null || youtubeApiKey.isEmpty()) {
+            youtubeApiKey = System.getenv("YOUTUBE_API_KEY");
+        }
+
+        // YouTube API는 최대 50개씩 요청 가능
+        int batchSize = 50;
+        for (int i = 0; i < videoIds.size(); i += batchSize) {
+            List<String> batch = videoIds.subList(i, Math.min(i + batchSize, videoIds.size()));
+            String ids = String.join(",", batch);
+
+            try {
+                Map<?, ?> response = webClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .scheme("https").host("www.googleapis.com").path("/youtube/v3/videos")
+                                .queryParam("part", "contentDetails")
+                                .queryParam("id", ids)
+                                .queryParam("key", youtubeApiKey)
+                                .build())
+                        .retrieve()
+                        .bodyToMono(Map.class)
+                        .block();
+
+                if (response != null && response.get("items") instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
+                    for (Map<String, Object> item : items) {
+                        String videoId = (String) item.get("id");
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> contentDetails = (Map<String, Object>) item.get("contentDetails");
+                        if (contentDetails != null) {
+                            String isoDuration = (String) contentDetails.get("duration");
+                            durationMap.put(videoId, parseIsoDuration(isoDuration));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to fetch video durations: " + e.getMessage());
+            }
+        }
+        return durationMap;
+    }
+
+    /**
+     * ISO 8601 duration (예: PT4M13S, PT1H2M30S)을 초 단위로 파싱
+     */
+    private int parseIsoDuration(String isoDuration) {
+        if (isoDuration == null || isoDuration.isEmpty()) return 0;
+        try {
+            Pattern pattern = Pattern.compile("PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?");
+            Matcher matcher = pattern.matcher(isoDuration);
+            if (matcher.matches()) {
+                int hours = matcher.group(1) != null ? Integer.parseInt(matcher.group(1)) : 0;
+                int minutes = matcher.group(2) != null ? Integer.parseInt(matcher.group(2)) : 0;
+                int seconds = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
+                return hours * 3600 + minutes * 60 + seconds;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to parse ISO duration: " + isoDuration);
+        }
+        return 0;
     }
 
     private String[] extractArtistAndLyricsFromMelon(String title, String channelTitle) {
