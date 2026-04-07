@@ -56,24 +56,24 @@ public class YoutubeService {
         }
         Map<String, Integer> durationMap = getVideoDurations(videoIds);
         
-        List<SongDetailDto> songDetails = new ArrayList<>();
-
-        for (Map<String, Object> item : playlistItems) {
+        return playlistItems.parallelStream().map(item -> {
             String title = (String) item.get("title");
             String channelTitle = (String) item.get("channelTitle");
+            String videoId = (String) item.get("videoId");
+            String thumbnail = (String) item.get("thumbnail");
+
             String[] artistAndLyrics = extractArtistAndLyricsFromMelon(title, channelTitle);
 
             SongDetailDto dto = new SongDetailDto();
             dto.title = title;
-            dto.videoId = (String) item.get("videoId");
-            dto.thumbnail = (String) item.get("thumbnail");
+            dto.videoId = videoId;
+            dto.thumbnail = thumbnail;
             dto.artist = artistAndLyrics[0];
             dto.lyrics = artistAndLyrics[1];
-            dto.duration = durationMap.getOrDefault(dto.videoId, 0);
+            dto.duration = durationMap.getOrDefault(videoId, 0);
 
-            songDetails.add(dto);
-        }
-        return songDetails;
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
     }
 
     /**
