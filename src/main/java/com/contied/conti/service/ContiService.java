@@ -246,4 +246,13 @@ public class ContiService {
 
         likeRepository.deleteByUserAndConti(user, conti);
     }
+
+    public List<ContiResponse> getLikedContis(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        return likeRepository.findLikedContisByUser(user).stream()
+                .map(ContiResponse::from)
+                .collect(Collectors.toList());
+    }
 }

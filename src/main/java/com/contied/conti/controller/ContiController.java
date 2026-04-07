@@ -84,4 +84,9 @@ public class ContiController {
     public void unlikeConti(@AuthenticationPrincipal String email, @PathVariable Long id) {
         contiService.unlikeConti(email, id);
     }
+
+    @GetMapping("/like")
+    public List<ContiResponse> getLikedContis(@AuthenticationPrincipal String email) {
+        return contiService.getLikedContis(email);
+    }
 }
