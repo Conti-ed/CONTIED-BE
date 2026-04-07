@@ -47,6 +47,7 @@ public class ContiEntity extends BaseEntity {
     private UserEntity user;
 
     @Builder.Default
+    @org.hibernate.annotations.BatchSize(size = 100)
     @ManyToMany
     @JoinTable(
             name = "\"ContiToSong\"",

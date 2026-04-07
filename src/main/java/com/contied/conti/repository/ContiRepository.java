@@ -15,7 +15,10 @@ import java.util.List;
 
 @Repository
 public interface ContiRepository extends JpaRepository<ContiEntity, Long> {
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
     Page<ContiEntity> findByStateOrderByCreatedAtDesc(State state, Pageable pageable);
+    
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
     List<ContiEntity> findByStateOrderByCreatedAtDesc(State state);
     
     @Query("SELECT c FROM ContiEntity c WHERE c.user = :user AND c.state = :state AND (:cursor = 0L OR c.id < :cursor) ORDER BY c.id DESC")
