@@ -8,5 +8,6 @@ import lombok.Getter;
 public class UserInfoResponse {
     private Long id;
     private String nickname;
+    private String email;
     private String role;
 }

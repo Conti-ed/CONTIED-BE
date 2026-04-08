@@ -22,6 +22,7 @@ public class UserService {
         return UserInfoResponse.builder()
                 .id(user.getId())
                 .nickname(user.getNickname())
+                .email(user.getEmail())
                 .role(user.getRole().name())
                 .build();
     }

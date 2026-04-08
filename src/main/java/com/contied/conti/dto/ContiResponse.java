@@ -49,6 +49,7 @@ public class ContiResponse {
     @Getter
     @Builder
     public static class UserDto {
+        private Long id;
         private String nickname;
         private String email;
     }
@@ -69,6 +70,7 @@ public class ContiResponse {
                 .youtubeUrl(entity.getYoutubeUrl())
                 .creatorNickname(entity.getUser() != null ? entity.getUser().getNickname() : "Unknown")
                 .userInfo(UserDto.builder()
+                        .id(entity.getUser() != null ? entity.getUser().getId() : null)
                         .nickname(entity.getUser() != null ? entity.getUser().getNickname() : "Unknown")
                         .email(entity.getUser() != null ? entity.getUser().getEmail() : "")
                         .build())
