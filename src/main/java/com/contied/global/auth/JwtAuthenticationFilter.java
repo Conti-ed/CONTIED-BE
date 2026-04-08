@@ -53,15 +53,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 유저 동기화: DB에 없으면 생성
                 final String finalEmail = email;
                 com.contied.user.entity.UserEntity user = userRepository.findByEmail(finalEmail).orElseGet(() -> {
-                    System.out.println("[JWT] Creating new user for: " + finalEmail);
                     return userRepository.saveAndFlush(com.contied.user.entity.UserEntity.builder()
                             .email(finalEmail)
                             .nickname(nickname)
                             .role(com.contied.user.entity.Role.UNKNOWN)
                             .build());
                 });
-
-                System.out.println("[JWT] Authenticated User ID: " + user.getId() + " (" + finalEmail + ")");
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         finalEmail, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
