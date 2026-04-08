@@ -52,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 유저 동기화: DB에 없으면 생성
                 final String finalEmail = email;
-                com.contied.user.entity.UserEntity user = userRepository.findByEmail(finalEmail).orElseGet(() -> {
+                userRepository.findByEmail(finalEmail).orElseGet(() -> {
                     return userRepository.saveAndFlush(com.contied.user.entity.UserEntity.builder()
                             .email(finalEmail)
                             .nickname(nickname)
