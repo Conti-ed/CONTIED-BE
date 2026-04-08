@@ -32,27 +32,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 Claims claims = tokenProvider.getClaims(jwt);
-                String email = claims.get("email", String.class);
+                String rawEmail = claims.get("email", String.class);
                 
+                // 이메일 정규화 (대소문자 차이로 인한 계정 분리 방지)
+                String email = (rawEmail != null) ? rawEmail.toLowerCase().trim() : null;
+
                 // metadata가 null일 수 있으므로 안전하게 처리
                 Map<String, Object> metadata = (Map<String, Object>) claims.get("user_metadata");
                 String nickname = (metadata != null && metadata.get("full_name") != null) 
                         ? (String) metadata.get("full_name") 
                         : "Unknown User";
 
-                System.out.println("Processing JWT for email: " + email);
-
                 // 이메일이 없으면 인증 실패 처리 (또는 다음 필터로)
                 if (!StringUtils.hasText(email)) {
-                    System.err.println("JWT error: Email is missing in token claims");
+                    System.err.println("[JWT] Error: Email is missing in token claims");
                     filterChain.doFilter(request, response);
                     return;
                 }
 
                 // 유저 동기화: DB에 없으면 생성
                 final String finalEmail = email;
-                userRepository.findByEmail(finalEmail).orElseGet(() -> {
-                    System.out.println("Creating new user for: " + finalEmail);
+                com.contied.user.entity.UserEntity user = userRepository.findByEmail(finalEmail).orElseGet(() -> {
+                    System.out.println("[JWT] Creating new user for: " + finalEmail);
                     return userRepository.saveAndFlush(com.contied.user.entity.UserEntity.builder()
                             .email(finalEmail)
                             .nickname(nickname)
@@ -60,8 +61,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             .build());
                 });
 
+                System.out.println("[JWT] Authenticated User ID: " + user.getId() + " (" + finalEmail + ")");
+
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        email, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
+                        finalEmail, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);

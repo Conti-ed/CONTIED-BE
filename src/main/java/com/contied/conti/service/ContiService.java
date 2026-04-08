@@ -43,9 +43,12 @@ public class ContiService {
     }
 
     public com.contied.conti.dto.MyContiesResponse getMyContis(String email, Long cursor, int take) {
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        String normalizedEmail = email.toLowerCase().trim();
+        UserEntity user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다. (" + normalizedEmail + ")"));
         
+        System.out.println("[SERVICE] Fetching MyConties for User ID: " + user.getId() + " (" + normalizedEmail + ")");
+
         org.springframework.data.domain.Slice<ContiEntity> slice = contiRepository.findByUserAndStateWithCursor(
                 user, State.ACTIVE, cursor, org.springframework.data.domain.PageRequest.of(0, take));
 
