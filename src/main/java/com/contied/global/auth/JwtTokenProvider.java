@@ -15,6 +15,7 @@ import java.security.AlgorithmParameters;
 import java.util.Base64;
 import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Component
 public class JwtTokenProvider {
@@ -28,7 +29,7 @@ public class JwtTokenProvider {
     public void init() throws Exception {
         // JWK JSON 파싱
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, String> jwk = objectMapper.readValue(jwtPublicKeyJson, Map.class);
+        Map<String, String> jwk = objectMapper.readValue(jwtPublicKeyJson, new TypeReference<Map<String, String>>() {});
         
         String xBase64 = jwk.get("x");
         String yBase64 = jwk.get("y");

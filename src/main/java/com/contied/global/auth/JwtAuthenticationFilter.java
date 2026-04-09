@@ -38,6 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String email = (rawEmail != null) ? rawEmail.toLowerCase().trim() : null;
 
                 // metadata가 null일 수 있으므로 안전하게 처리
+                @SuppressWarnings("unchecked")
                 Map<String, Object> metadata = (Map<String, Object>) claims.get("user_metadata");
                 String nickname = (metadata != null && metadata.get("full_name") != null) 
                         ? (String) metadata.get("full_name") 
