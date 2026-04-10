@@ -55,4 +55,10 @@ public class ContiEntity extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "song_id")
     )
     private List<SongEntity> songs = new ArrayList<>();
+
+    public void updateTotalDuration() {
+        this.duration = this.songs.stream()
+                .mapToInt(song -> song.getDuration() != null ? song.getDuration() : 0)
+                .sum();
+    }
 }

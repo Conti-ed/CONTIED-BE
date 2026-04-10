@@ -83,6 +83,7 @@ public class ContiService {
                 .state(State.ACTIVE)
                 .build();
 
+        conti.updateTotalDuration();
         return ContiResponse.from(contiRepository.save(conti));
     }
 
@@ -104,6 +105,7 @@ public class ContiService {
                 .state(State.ACTIVE)
                 .build();
 
+        conti.updateTotalDuration();
         return ContiResponse.from(contiRepository.save(conti));
     }
 
@@ -145,6 +147,7 @@ public class ContiService {
             List<SongEntity> newSongs = songRepository.findAllById(dto.getSongs());
             conti.getSongs().clear();
             conti.getSongs().addAll(newSongs);
+            conti.updateTotalDuration();
         }
 
         return ContiResponse.from(conti);
@@ -209,6 +212,7 @@ public class ContiService {
                 .state(State.ACTIVE)
                 .build();
 
+        conti.updateTotalDuration();
         return ContiResponse.from(contiRepository.save(conti));
     }
 
