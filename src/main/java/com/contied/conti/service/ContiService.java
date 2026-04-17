@@ -12,10 +12,13 @@ import com.contied.song.repository.SongRepository;
 import com.contied.user.entity.UserEntity;
 import com.contied.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -142,11 +145,26 @@ public class ContiService {
             conti.setDescription(dto.getDescription());
         }
 
-        // 노래 목록 동기화 (기존 목록 덮어쓰기)
+        // 노래 목록 동기화: 기존 목록과 비교해 delta(제거/추가)만 적용 (불필요한 DELETE+INSERT 방지)
         if (dto.getSongs() != null) {
             List<SongEntity> newSongs = songRepository.findAllById(dto.getSongs());
-            conti.getSongs().clear();
-            conti.getSongs().addAll(newSongs);
+            Set<Long> newIds = newSongs.stream().map(SongEntity::getId).collect(Collectors.toSet());
+            Set<Long> currentIds = conti.getSongs().stream().map(SongEntity::getId).collect(Collectors.toSet());
+
+            // 제거 대상
+            conti.getSongs().removeIf(song -> !newIds.contains(song.getId()));
+
+            // 추가 대상 (요청 순서 유지)
+            List<SongEntity> toAdd = new ArrayList<>();
+            for (SongEntity s : newSongs) {
+                if (!currentIds.contains(s.getId())) {
+                    toAdd.add(s);
+                }
+            }
+            if (!toAdd.isEmpty()) {
+                conti.getSongs().addAll(toAdd);
+            }
+
             conti.updateTotalDuration();
         }
 
@@ -235,11 +253,17 @@ public class ContiService {
         ContiEntity conti = contiRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 콘티입니다."));
 
-        if (likeRepository.findByUserAndConti(user, conti).isEmpty()) {
+        if (likeRepository.existsByUserAndConti(user, conti)) {
+            return;
+        }
+
+        try {
             likeRepository.save(com.contied.conti.entity.LikeEntity.builder()
                     .user(user)
                     .conti(conti)
                     .build());
+        } catch (DataIntegrityViolationException e) {
+            // 동시에 같은 (user, conti) 좋아요가 들어온 경우 unique constraint 가 막아줌 → 무시
         }
     }
 

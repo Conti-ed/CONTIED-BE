@@ -9,7 +9,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "\"Like\"")
+@Table(
+        name = "\"Like\"",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_like_user_conti",
+                columnNames = {"user_id", "conti_id"}
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor
