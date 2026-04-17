@@ -17,11 +17,10 @@ public interface LikeRepository extends JpaRepository<LikeEntity, Long> {
     boolean existsByUserAndConti(UserEntity user, ContiEntity conti);
     void deleteByUserAndConti(UserEntity user, ContiEntity conti);
 
-    // songs 컬렉션까지 함께 fetch 하여 ContiResponse.from() 에서의 N+1 방지.
-    // @ManyToMany 를 LEFT JOIN FETCH 하면 row 수가 곡 수만큼 늘어나므로 DISTINCT 로 중복 제거.
-    @Query("SELECT DISTINCT l.conti FROM LikeEntity l " +
+    // songs 컬렉션은 ContiEntity 에 @BatchSize(100) 이 설정돼 있어 배치 로딩으로 처리됨.
+    // (JPQL 에서 DISTINCT + ORDER BY 조합은 PostgreSQL 에서 "ORDER BY expressions must appear in select list" 로 실패)
+    @Query("SELECT l.conti FROM LikeEntity l " +
             "JOIN FETCH l.conti.user " +
-            "LEFT JOIN FETCH l.conti.songs " +
             "WHERE l.user = :user " +
             "AND l.conti.state = com.contied.song.entity.State.ACTIVE " +
             "ORDER BY l.id DESC")
