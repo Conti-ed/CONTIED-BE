@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -16,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Map;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -46,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 이메일이 없으면 인증 실패 처리 (또는 다음 필터로)
                 if (!StringUtils.hasText(email)) {
-                    System.err.println("[JWT] Error: Email is missing in token claims");
+                    log.warn("[JWT] 토큰 클레임에 이메일이 없습니다.");
                     filterChain.doFilter(request, response);
                     return;
                 }
@@ -68,8 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
-            System.err.println("JWT Authentication error: " + e.getMessage());
-            e.printStackTrace();
+            log.warn("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);

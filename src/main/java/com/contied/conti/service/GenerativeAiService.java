@@ -34,6 +34,9 @@ public class GenerativeAiService {
         Map<String, Object> aiPayload = new HashMap<>();
         aiPayload.put("keywords", request.getKeywords());
         aiPayload.put("bible_verse_range", request.getBibleVerseRange());
+        if (request.getSeed() != null) {
+            aiPayload.put("seed", request.getSeed());
+        }
         
         try {
             AiResponse response = webClient.post()

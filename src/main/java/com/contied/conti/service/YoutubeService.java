@@ -1,5 +1,6 @@
 package com.contied.conti.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 @Service("contiYoutubeService")
 public class YoutubeService {
 
@@ -119,7 +121,7 @@ public class YoutubeService {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Failed to fetch video durations: " + e.getMessage());
+                log.error("동영상 재생시간 조회 실패: {}", e.getMessage(), e);
             }
         }
         return durationMap;
@@ -140,7 +142,7 @@ public class YoutubeService {
                 return hours * 3600 + minutes * 60 + seconds;
             }
         } catch (Exception e) {
-            System.err.println("Failed to parse ISO duration: " + isoDuration);
+            log.warn("ISO duration 파싱 실패: {}", isoDuration);
         }
         return 0;
     }
@@ -223,7 +225,7 @@ public class YoutubeService {
             }
             
         } catch (Exception e) {
-            System.err.println("Melon crawling failed for: " + searchKeyword);
+            log.warn("멜론 크롤링 실패 (검색어: {}): {}", searchKeyword, e.getMessage());
         }
         return null;
     }
@@ -258,7 +260,7 @@ public class YoutubeService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to fetch playlist title: " + e.getMessage());
+            log.error("재생목록 제목 조회 실패: {}", e.getMessage(), e);
         }
         return null;
     }
