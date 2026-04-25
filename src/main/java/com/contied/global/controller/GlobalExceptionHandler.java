@@ -1,5 +1,6 @@
 package com.contied.global.controller;
 
+import com.contied.global.exception.AiMappingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -15,6 +16,12 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(AiMappingException.class)
+    public ResponseEntity<Map<String, Object>> handleAiMapping(AiMappingException e) {
+        log.error("AI 곡 매핑 오류: {}", e.getMessage());
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
