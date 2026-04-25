@@ -18,6 +18,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -74,7 +75,11 @@ public class ContiService {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        AiResponse aiResponse = generativeAiService.generateContiByAi(request);
+        AiResponse aiResponse = generativeAiService.generateContiByAi(request)
+                .block(Duration.ofSeconds(125));
+        if (aiResponse == null) {
+            throw new IllegalStateException("AI 서버 응답이 비어 있습니다. 잠시 후 다시 시도해 주세요.");
+        }
 
         List<SongEntity> songs = new ArrayList<>();
         for (AiResponse.AiSong songItem : aiResponse.getSongs()) {

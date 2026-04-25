@@ -14,7 +14,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -54,16 +56,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList(
+        List<String> origins = new ArrayList<>(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
                 "http://[::1]:*",
                 "https://contied.vercel.app",
-                "https://*.vercel.app",
-                "https://contied.cloud",
-                "https://*.contied.cloud"
+                "https://contied.cloud"
         ));
- // 실운영 시 특정 도메인으로 제한 필요
+        String extra = System.getenv("CORS_EXTRA_ORIGINS");
+        if (extra != null && !extra.isBlank()) {
+            Arrays.stream(extra.split(",")).map(String::trim).filter(s -> !s.isEmpty()).forEach(origins::add);
+        }
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

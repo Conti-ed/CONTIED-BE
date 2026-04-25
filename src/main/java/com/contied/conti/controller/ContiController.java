@@ -5,6 +5,7 @@ import com.contied.conti.dto.PostContiByAiRequest;
 import com.contied.conti.dto.PostContiByCreationRequest;
 import com.contied.conti.dto.PostContiByYoutubeRequest;
 import com.contied.conti.service.ContiService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -38,22 +39,22 @@ public class ContiController {
 
     @PostMapping("/myconti/custom")
     public ContiResponse createContiByCreation(
-            @AuthenticationPrincipal String email, 
-            @RequestBody PostContiByCreationRequest request) {
+            @AuthenticationPrincipal String email,
+            @Valid @RequestBody PostContiByCreationRequest request) {
         return contiService.createConti(email, request);
     }
 
     @PostMapping("/myconti/ai")
     public ContiResponse createContiByAi(
-            @AuthenticationPrincipal String email, 
-            @RequestBody PostContiByAiRequest request) {
+            @AuthenticationPrincipal String email,
+            @Valid @RequestBody PostContiByAiRequest request) {
         return contiService.createContiByAi(email, request);
     }
 
     @PostMapping("/myconti/youtube")
     public ContiResponse createContiByYoutube(
-            @AuthenticationPrincipal String email, 
-            @RequestBody PostContiByYoutubeRequest request) {
+            @AuthenticationPrincipal String email,
+            @Valid @RequestBody PostContiByYoutubeRequest request) {
         return contiService.createContiByYoutube(email, request);
     }
 
