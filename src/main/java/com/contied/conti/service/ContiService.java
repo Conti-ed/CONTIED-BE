@@ -6,21 +6,25 @@ import com.contied.conti.dto.PostContiByAiRequest;
 import com.contied.conti.entity.ContiEntity;
 import com.contied.conti.repository.ContiRepository;
 import com.contied.conti.repository.LikeRepository;
+import com.contied.global.exception.AiMappingException;
 import com.contied.song.entity.SongEntity;
 import com.contied.song.entity.State;
 import com.contied.song.repository.SongRepository;
 import com.contied.user.entity.UserEntity;
 import com.contied.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -71,12 +75,54 @@ public class ContiService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         AiResponse aiResponse = generativeAiService.generateContiByAi(request);
-        
-        List<Long> songIds = aiResponse.getSongs().stream()
-                .map(AiResponse.AiSong::getId)
-                .collect(Collectors.toList());
-        
-        List<SongEntity> songs = songRepository.findAllById(songIds);
+
+        List<SongEntity> songs = new ArrayList<>();
+        for (AiResponse.AiSong songItem : aiResponse.getSongs()) {
+            Optional<SongEntity> found = Optional.empty();
+
+            // 우선순위 1: videoId로 매핑 (AI-DB 정합성 보장)
+            String videoId = songItem.getVideoId();
+            if (videoId != null && !videoId.isBlank()) {
+                found = songRepository.findByVideoId(videoId);
+                if (found.isEmpty()) {
+                    log.warn("videoId로 곡을 찾지 못했습니다. videoId={}", videoId);
+                }
+            }
+
+            // 우선순위 2: id로 시도 (백워드 호환, videoId 없는 경우)
+            if (found.isEmpty() && songItem.getId() != null) {
+                found = songRepository.findById(songItem.getId());
+                if (found.isPresent()) {
+                    log.warn("videoId 매핑 실패 — id 폴백 사용. id={}", songItem.getId());
+                }
+            }
+
+            // 우선순위 3: (title, artist) 페어로 검색
+            if (found.isEmpty()
+                    && songItem.getTitle() != null && !songItem.getTitle().isBlank()
+                    && songItem.getArtist() != null && !songItem.getArtist().isBlank()) {
+                found = songRepository.findByTitleAndArtistAndState(
+                        songItem.getTitle(), songItem.getArtist(), State.ACTIVE);
+                if (found.isPresent()) {
+                    log.warn("videoId/id 매핑 실패 — title+artist 폴백 사용. title={}, artist={}",
+                            songItem.getTitle(), songItem.getArtist());
+                }
+            }
+
+            if (found.isPresent()) {
+                songs.add(found.get());
+            } else {
+                log.warn("AI 추천 곡을 DB에서 매핑하지 못해 스킵합니다. videoId={}, id={}, title={}",
+                        videoId, songItem.getId(), songItem.getTitle());
+            }
+        }
+
+        // 최소 3곡 매핑 보장
+        if (songs.size() < 3) {
+            throw new AiMappingException(
+                    "AI 추천 결과를 매핑할 수 없습니다. 매핑된 곡 수: " + songs.size() + "곡 (최소 3곡 필요). " +
+                    "데이터 정합성을 확인해 주세요.");
+        }
 
         ContiEntity conti = ContiEntity.builder()
                 .title(aiResponse.getTitle())

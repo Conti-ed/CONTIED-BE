@@ -13,4 +13,5 @@ public interface SongRepository extends JpaRepository<SongEntity, Long> {
     List<SongEntity> findByState(State state);
     Optional<SongEntity> findByVideoId(String videoId);
     List<SongEntity> findByTitleContainingAndState(String title, State state);
+    Optional<SongEntity> findByTitleAndArtistAndState(String title, String artist, State state);
 }
