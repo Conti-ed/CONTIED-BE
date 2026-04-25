@@ -17,9 +17,9 @@ public class SongController {
     @GetMapping
     public List<SongResponse> getAllSongs(
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int cursor,
+            @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "500") int take) {
-        return songService.searchSongs(keyword);
+        return songService.searchSongs(keyword, cursor, take);
     }
 
     @GetMapping("/search")
@@ -27,7 +27,8 @@ public class SongController {
             @RequestParam(name = "q", required = false) String keyword,
             @RequestParam(name = "keyword", required = false) String keywordAlternative) {
         String finalKeyword = (keyword != null) ? keyword : keywordAlternative;
-        return songService.searchSongs(finalKeyword);
+        // /search 엔드포인트는 cursor 없이 전체 결과 반환 (기존 동작 유지)
+        return songService.searchSongs(finalKeyword, 0L, 200);
     }
 
     @GetMapping("/{id}")

@@ -10,7 +10,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,20 +43,8 @@ public class SearchHistoryService {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // 중복 체크: 이미 있으면 updatedAt 갱신
-        searchHistoryRepository.findByUserAndQuery(user, query)
-                .ifPresentOrElse(
-                        entity -> {
-                            entity.setUpdatedAt(LocalDateTime.now());
-                        },
-                        () -> {
-                            SearchHistoryEntity newEntity = SearchHistoryEntity.builder()
-                                    .user(user)
-                                    .query(query)
-                                    .build();
-                            searchHistoryRepository.save(newEntity);
-                        }
-                );
+        // UPSERT: (user_id, query) unique 제약 기반 race condition 방지
+        searchHistoryRepository.upsertSearch(user.getId(), query.trim());
     }
 
     @Transactional
